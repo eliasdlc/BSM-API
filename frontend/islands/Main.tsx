@@ -39,13 +39,13 @@ function SidebarButtons({
                 <button
                     key={index}
                     className={`flex items-center justify-center p-1 ${
-                        activeButton === name || hoveredButton.value === name ? "click-shadow" : "unclick-shadow"
-                    }`}
+                        activeButton === name ? "click-shadow" : "unclick-shadow"
+                    } ${hoveredButton.value === name && activeButton != name ? "hover-shadow" : ""}`}
                     onClick={() => onButtonClick(name)}
                     onMouseEnter={() => handleMouseEnter(name)}
                     onMouseLeave={handleMouseLeave}
                 >
-                    <Icon color={activeButton === name || hoveredButton.value === name ? "#F5672D" : "white"} />
+                    <Icon color={activeButton === name ? "#F5672D" : "white"} />
                 </button>
             ))}
         </div>
@@ -89,8 +89,6 @@ export default function Main() {
                 view.value = "statistics-screen";
                 break;
         }
-
-        console.log("view.value after click:", view.value);
     };
 
     return (
@@ -100,7 +98,7 @@ export default function Main() {
                 <img
                     src={"basketball-logo.png"}
                     alt={"Basketball Logo"}
-                    className={"basketball-logo mb-6"}
+                    className={"basketball-logo mb-3"}
                 />
                 <div
                     className={
@@ -118,7 +116,7 @@ export default function Main() {
 
             <div className={"flex flex-row w-full flex-wrap gap-5"}>
                 {/* Main content */}
-                <div className={"w-full flex-grow border-white border-3"}>
+                <div className={"w-full flex-grow"}>
                     {view.value === "main-screen" && <MainScreen />}
                     {view.value === "game-screen" && <GameScreen />}
                     {view.value === "team-screen" && <TeamScreen />}
