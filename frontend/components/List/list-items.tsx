@@ -18,6 +18,9 @@ export function GenericListItem<T>({
                                        rowClassName = '',
                                    }: GenericListItemProps<T>) {
     return (
+        // TODO: arreglar errores
+        // TODO: hacer que el hover sea más bonito
+        // TODO: hacer que los textos se centren verticcalmente
         <div
             className={`grid py-2 px-4 border-b border-[#F0E0D6] hover:bg-[#fff7f1] transition-colors justify-center
         ${onRowClick ? 'cursor-pointer' : ''} ${typeof rowClassName === 'function' ? rowClassName(item, columnCount) : rowClassName}`}

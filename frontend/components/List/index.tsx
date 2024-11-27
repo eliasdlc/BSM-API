@@ -7,7 +7,7 @@ export function GenericList<T>({
                                    columns = [],
                                    className = '',
                                    headerClassName = '',
-                                   rowClassName = '',
+                                   rowClassName = (item: T, index: number) => '',
                                    onRowClick
                                }: ListProps<T>) {
     // Calcula el número de columnas de forma segura
@@ -36,9 +36,9 @@ export function GenericList<T>({
             )}
 
             {/* Cuerpo de la lista */}
-            <div className={"h-[500px] overflow-y-auto"}
+            <div className={"h-[510px] overflow-y-auto"}
                  style={{
-                     maxHeight: '500px', // Altura máxima para habilitar el scroll
+                     maxHeight: '850px',
                  }}
             >
                 {data.length === 0 ? (
@@ -46,14 +46,14 @@ export function GenericList<T>({
                         No hay elementos para mostrar
                     </div>
                 ) : (
-                    data.map((item, index) => (
+                    data.map((item: T, index: number) => (
                         <GenericListItem
                             key={index}
                             item={item}
                             columns={columns}
                             columnCount={columnCount}
                             onRowClick={onRowClick}
-                            rowClassName={rowClassName}
+                            rowClassName={rowClassName(item, index)}
                         />
                     ))
                 )}

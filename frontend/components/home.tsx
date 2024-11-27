@@ -33,7 +33,11 @@ function TextButtons({
     );
 }
 
-export default function Home() {
+interface HomeProps {
+    path?: string
+}
+
+export default function Home({path}: HomeProps) {
 
     const headerButtons = ["Main Screen", "Statistics"];
     const view = useSignal("main-screen");
