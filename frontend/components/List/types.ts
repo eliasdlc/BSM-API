@@ -6,10 +6,9 @@ import {JSX} from "npm:preact@10.25.0";
 
 export interface ListColumnConfig<T> {
     key: keyof T;
-    header: string;
-    // deno-lint-ignore no-explicit-any
-    render?: (value: string | number, item: T) => any;
     width?: string;
+    render?: (value: T[keyof T], item: T) => JSX.Element | string | number;
+    header: string;
     className?: string;
     hoverText?: (value: string | number, item: T) => string;
 }

@@ -1,10 +1,11 @@
 import { useSignal } from "https://esm.sh/v135/@preact/signals@1.2.2/X-ZS8q/dist/signals.js";
 import { GenericList, ListColumnConfig } from "../components/List/index.tsx";
 import { JSX, render } from "npm:preact@10.25.0";
-import CreateGame from "./game/create-game.tsx";
+import CreateGame from "../islands/CreateGame.tsx";
 import { Head } from "$fresh/runtime.ts";
 import { Link } from "../components/link.tsx";
 import Sidebar from "../components/Sidebar.tsx";
+import ModifyGame from "./game/modify-game.tsx";
 
 enum GameScreenSection {
     ModifyGame = "Modify Game (Select an element)",
@@ -64,11 +65,12 @@ export default function GameScreen({ path }: GameScreenProps) {
     const activeButton = useSignal(buttonsList[0]);
 
     // Estado para almacenar el usuario seleccionado
-    const selectedUser = useSignal<User | null>(null);
+    const selectedUser = useSignal<User | undefined>(undefined);
 
     const allowModify = (user: User) => {
-        // Cuando un usuario es seleccionado, se actualiza el estado
+        console.log('Selected user:', user);
         selectedUser.value = user;
+
     }
 
     const handleButtonClick = (section: string) => {
@@ -77,7 +79,8 @@ export default function GameScreen({ path }: GameScreenProps) {
 
         const container = document.getElementById("app-container");
 
-        if (container) {
+        if (container && !selectedUser) {
+            console.log("se limio el container");
             container.innerHTML = ''; // Limpiar contenido previo
         }
 
@@ -91,10 +94,22 @@ export default function GameScreen({ path }: GameScreenProps) {
                 );
                 break;
             case GameScreenSection.ModifyGame:
-                render(
-                    <Link href="/modify-game">Create Game</Link>,
-                    container
-                );
+
+                if (selectedUser.value === null) {
+                    console.log("No user selected");
+                } else {
+                    // TODO: Se deben mandar el elemento a modificr al componente ModifyGame
+                    container.innerHTML = '';
+                    console.log("se renderizo modify-game");
+                    render(
+                        <Link href="/modify-game">
+                            <ModifyGame />
+
+                        </Link>,
+                        container
+                    );
+                }
+
                 break;
         }
     };
@@ -139,8 +154,8 @@ export default function GameScreen({ path }: GameScreenProps) {
         }
     ];
 
-    const rowClassName = (item: User, index: number) =>
-        index % 2 === 0 ? 'bg-[#F0E0D6]' : 'bg-[#ffefe3] ';
+    const rowClassName = (item: User, index: number, isSelected?: boolean) =>
+        isSelected ? 'bg-[#F5672D] text-white' : (index % 2 === 0 ? 'bg-[#F0E0D6]' : 'bg-[#ffefe3]');
 
     return (
         <div id={"2app-container"} className={"flex flex-col gap-4 w-full h-full p-0"}>
@@ -163,7 +178,8 @@ export default function GameScreen({ path }: GameScreenProps) {
                         columns={userColumns}
                         rowClassName={rowClassName}
                         className="mx-auto w-full"
-                        onRowClick={allowModify} // Cambié esto para pasar el usuario seleccionado
+                        onRowClick={allowModify}
+                        selectedItem={selectedUser.value}
                     />
                 </div>
                 <div className={"w-full h-[15%] bg-gray bg-[#312d2a] rounded-[32px] "}>

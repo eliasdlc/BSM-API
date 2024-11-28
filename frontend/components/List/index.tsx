@@ -8,10 +8,13 @@ export function GenericList<T>({
                                    className = '',
                                    headerClassName = '',
                                    rowClassName = (item: T, index: number) => '',
-                                   onRowClick
-                               }: ListProps<T>) {
+                                   onRowClick,
+                                    selectedItem,
+                               }: ListProps<T> & { selectedItem?: T }) {
     // Calcula el número de columnas de forma segura
     const columnCount = columns.length || 1;
+
+
 
     return (
         <div className={`w-full border-[#ffefe3] rounded-[16px] overflow-hidden shadow-md justify-center ${className}`}>
@@ -53,6 +56,7 @@ export function GenericList<T>({
                             columns={columns}
                             columnCount={columnCount}
                             onRowClick={onRowClick}
+                            isSelected={JSON.stringify(selectedItem) === JSON.stringify(item)}
                             rowClassName={rowClassName(item, index)}
                         />
                     ))

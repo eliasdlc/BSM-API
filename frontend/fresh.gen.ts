@@ -9,12 +9,12 @@ import * as $api_players from "./routes/api/players.ts";
 import * as $game_screen from "./routes/game-screen.tsx";
 import * as $game from "./routes/game.tsx";
 import * as $game_GameRouter from "./routes/game/GameRouter.tsx";
-import * as $game_create_game from "./routes/game/create-game.tsx";
 import * as $game_modify_game from "./routes/game/modify-game.tsx";
 import * as $greet_name_ from "./routes/greet/[name].tsx";
 import * as $index from "./routes/index.tsx";
 import * as $player from "./routes/player.tsx";
 import * as $team from "./routes/team.tsx";
+import * as $CreateGame from "./islands/CreateGame.tsx";
 import * as $Main from "./islands/Main.tsx";
 import * as $PlayerTest from "./islands/PlayerTest.tsx";
 import type { Manifest } from "$fresh/server.ts";
@@ -28,7 +28,6 @@ const manifest = {
     "./routes/game-screen.tsx": $game_screen,
     "./routes/game.tsx": $game,
     "./routes/game/GameRouter.tsx": $game_GameRouter,
-    "./routes/game/create-game.tsx": $game_create_game,
     "./routes/game/modify-game.tsx": $game_modify_game,
     "./routes/greet/[name].tsx": $greet_name_,
     "./routes/index.tsx": $index,
@@ -36,6 +35,7 @@ const manifest = {
     "./routes/team.tsx": $team,
   },
   islands: {
+    "./islands/CreateGame.tsx": $CreateGame,
     "./islands/Main.tsx": $Main,
     "./islands/PlayerTest.tsx": $PlayerTest,
   },
