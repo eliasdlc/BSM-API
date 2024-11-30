@@ -117,7 +117,7 @@ export default function CreateGame() {
     };
 
     return (
-        <div className={"h-screen w-full gap-4 flex flex-col p-5"}>
+        <div className={"h-full w-full gap-4 flex flex-col"}>
             <div
                 id={"formulario"}
                 className={"flex flex-col bg-[#312d2a] flex-grow gap-5 rounded-[32px] p-5"}

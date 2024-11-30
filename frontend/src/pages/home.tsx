@@ -51,7 +51,7 @@ export default function Home() {
                 setView("main-screen"); // Cambia la vista a 'main-screen'
                 break;
             case "Statistics":
-                setView("statistics"); // Cambia la vista a 'statistics'
+                setView("statistics.tsx"); // Cambia la vista a 'statistics.tsx'
                 break;
         }
 
@@ -74,7 +74,7 @@ export default function Home() {
             <div className="flex w-full h-full">
                 <div className="w-full h-full">
                     {view === "main-screen" && <MainScreen />} {/* Si la vista es main-screen, renderiza el componente */}
-                    {view === "statistics" && <Statistics />} {/* Si la vista es statistics, renderiza el componente */}
+                    {view === "statistics.tsx" && <Statistics />} {/* Si la vista es statistics.tsx, renderiza el componente */}
                 </div>
             </div>
         </div>

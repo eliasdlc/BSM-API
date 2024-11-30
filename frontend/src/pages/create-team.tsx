@@ -103,7 +103,7 @@ export default function CreateTeam() {
     };
 
     return (
-        <div className={"h-screen w-full gap-4 flex flex-col p-5"}>
+        <div className={"h-full w-full gap-4 flex flex-col"}>
             <div id={"formulario"} className={"flex flex-col bg-[#312d2a] flex-grow gap-5 rounded-[32px] p-5"}>
                 <h1 className={"w-full text-xl text-[#F0E0D6] font-bold"}>Team Creation Process</h1>
 

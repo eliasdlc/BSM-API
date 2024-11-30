@@ -1,4 +1,4 @@
-export default function Statistics() {
+export default function StoredProcedure() {
 
     return (
 

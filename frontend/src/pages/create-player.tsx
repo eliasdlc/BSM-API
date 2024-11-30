@@ -131,11 +131,11 @@ export default function CreatePlayer(){
     }
 
     return (
-        <div className={"h-screen w-full gap-4 flex flex-col p-5"}>
+        <div className={"h-full w-full gap-4 flex flex-col"}>
             <div id={"formulario"} className={"flex flex-col bg-[#312d2a] flex-grow gap-5 rounded-[32px] p-5"}>
-                {/* DONE: Agregar elementos elementos para el form */}
+                {/* DONE: Agregar elementos para el form */}
                 {/* DONE: Hacer que los inputs se guarden en variables */}
-                {/* TODO: Conectar el guardado con la DB */}
+                {/* DONE: Conectar el guardado con la DB */}
 
 
                 <h1 className={"w-full text-xl text-[#F0E0D6] font-bold"}>Game Creation Process</h1>

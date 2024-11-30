@@ -5,6 +5,7 @@ import GameIcon from "../assets/GameIcon.tsx";
 import TeamIcon from "../assets/TeamIcon.tsx";
 import PlayerIcon from "../assets/PlayerIcon.tsx";
 import basketLogo from "../assets/basketball-logo.png";
+import StatisticsIcon from "../assets/StatisticsIcon.tsx";
 
 type IconComponent = (props: { color: string }) => JSX.Element;
 
@@ -54,7 +55,8 @@ const defaultSidebarButtons = [
     { icon: (props: { color: string }) => <HomeIcon color={props.color} />, name: "home" },
     { icon: (props: { color: string }) => <GameIcon color={props.color} />, name: "game" },
     { icon: (props: { color: string }) => <TeamIcon color={props.color} />, name: "team" },
-    { icon: (props: { color: string }) => <PlayerIcon color={props.color} />, name: "player" }
+    { icon: (props: { color: string }) => <PlayerIcon color={props.color} />, name: "player" },
+    { icon: (props: { color: string }) => <StatisticsIcon color={props.color} />, name: "statistics" },
 ];
 
 export default function Sidebar({ className }: { className?: string }) {
@@ -82,6 +84,9 @@ export default function Sidebar({ className }: { className?: string }) {
                 break;
             case "player":
                 navigate("/player");
+                break;
+            case "statistics":
+                navigate("/statistics");
                 break;
         }
     };
