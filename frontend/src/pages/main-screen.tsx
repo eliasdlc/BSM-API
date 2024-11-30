@@ -24,7 +24,7 @@ export default function MainScreen() {
                 <header className={"px-3 h-[30px] w-full font-bold text-xl text-white"}>Recent Games</header>
 
                 {/* Display the recent games dynamically */}
-                <div className="flex flex-row flex-shrink gap-4 h-full max-w-[1435px] w-full overflow-x-auto rounded-[16px]">
+                <div className="flex flex-row flex-shrink gap-4 h-full max-w-[1368px] w-full overflow-x-auto rounded-[16px]">
                     {recentGames.map((game) => (
                         <GameViewComponent key={game.id} {...game} />
                     ))}

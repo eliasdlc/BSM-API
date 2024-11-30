@@ -1,43 +1,134 @@
 import {useNavigate} from "react-router-dom";
-import {FormEvent, useState} from "react";
+import {ChangeEvent, FormEvent, useEffect, useState} from "react";
+import axios from "axios";
+
+interface City {
+    CodCiudad: string;
+    Nombre: string;
+}
+
+interface Team {
+    CodEquipo: string;
+    Nombre: string;
+    CodCiudad: string;
+}
 
 export default function CreatePlayer(){
+    const [formData, setFormData] = useState({
+        CodJugador: "",
+        CodEquipo: "",
+        Numero: "",
+        Nombre1: "",
+        Nombre2: "",
+        Apellido1: "",
+        Apellido2: "",
+        CiudadNacim: "",
+        FechaNacim: ""
+    })
 
-
-    // DONE: Aqui se esta generando un problema con el renderizado de la pagina y el manejo de los dato, todavia nose.
-
+    const [cities, setCities] = useState<City[]>([]); // Para guardar las ciudades obtenidas
+    const [, setLoading] = useState<boolean>(false); // Estado de carga
+    const [, setError] = useState<string | null>(null); // Estado de error
+    const [teams, setTeams] = useState<Team[]>([]);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Obtener las ciudades
+        const fetchCities = async () => {
+            try {
+                const response = await axios.get("http://localhost:3000/Ciudad");
+                setCities(response.data); // Asume que la respuesta es un array de objetos City
+            } catch (err) {
+                console.error("Error fetching cities:", err);
+                setError("Error fetching cities");
+            }
+        };
+
+        fetchCities();
+    }, []);
+
+    useEffect(() => {
+        const fetchAllPlayersAndSetNextId = async () => {
+            try {
+                // Obtener todos los equipos
+                const response = await axios.get('http://localhost:3000/Jugador');
+                const players = response.data; // Asumiendo que la respuesta es un array de equipos
+
+                if (players.length > 0) {
+                    // Obtener el último equipo
+                    const lastPlayer = players[players.length - 1];
+                    const lastPlayerId = lastPlayer.CodJugador;
+
+                    // Incrementar el ID
+                    const nextIdNum = parseInt(lastPlayerId, 10) + 1;
+                    const nextId = nextIdNum.toString().padStart(4, '0'); // Asegurarse de que tenga 4 dígitos
+
+                    // Asignar el siguiente ID al estado
+                    setFormData((prevData) => ({
+                        ...prevData,
+                        CodJugador: nextId
+                    }));
+                } else {
+                    // Si no hay equipos, iniciar con el primer ID
+                    setFormData((prevData) => ({
+                        ...prevData,
+                        CodJugador: '0001'
+                    }));
+                }
+            } catch (error) {
+                console.error('Error fetching players:', error);
+            }
+        };
+
+        fetchAllPlayersAndSetNextId();
+    }, []);
+
+    useEffect(() => {
+        const fetchTeams = async () => {
+            try {
+                const response = await axios.get<Team[]>("http://localhost:3000/Equipo");
+                setTeams(response.data);
+            } catch (error) {
+                console.error("Error fetching players:", error);
+            } finally {
+                setLoading(false); // Fin de la carga
+            }
+        };
+
+        fetchTeams().then(() => console.log("Player fetched"));
+    }, []);
+
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const target = e.target as HTMLInputElement | HTMLSelectElement;
+        const { name, value } = target;
+
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
+    };
+
+    const handleSubmit = async (e: FormEvent) => {
+        console.log("Input Value: ", formData);
+        e.preventDefault(); // Evitar el comportamiento por defecto del formulario
+        setLoading(true);
+
+        try {
+            // Hacer la solicitud para guardar el equipo
+            await axios.post("http://localhost:3000/Jugador", formData);
+            alert("Player created successfully!");
+            navigate("/player"); // Redirigir a la lista de equipos
+        } catch (error) {
+            console.error("Error creating player:", error);
+            setError("Failed to create player.");
+        } finally {
+            setLoading(false);
+        }
+    }
 
     const goBackHandler = () => {
         navigate("/player");
     }
-
-    const [formData, setFormData] = useState({
-        playerId: "",
-        teamId: "",
-        number: "",
-        name1: "",
-        name2: "",
-        lastname1: "",
-        lastname2: "",
-        cityBorn: "",
-        yearBorn: ""
-    })
-
-    const handleInputChange = (e: FormEvent<HTMLInputElement>) => {
-        const target = e.target as HTMLInputElement
-        const { name, value } = target;
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: value
-        }));
-    }
-
-    const handleSubmit = () => {
-        console.log("Input Value: ", formData)
-    }
-
-
 
     return (
         <div className={"h-screen w-full gap-4 flex flex-col p-5"}>
@@ -54,19 +145,32 @@ export default function CreatePlayer(){
                     <div id={"primary-player-info"} className={"flex flex-row gap-5 w-full"}>
                         <div id={"player-id"} className={"flex flex-col gap-2 w-[25%]"}>
                             <label htmlFor={"player-id"} className={"text-[#F0E0D6] text-lg"}>Player ID</label>
-                            <input type={"text"} id={"player-id"} name={"playerId"} value={formData.playerId} onChange={handleInputChange}
-                                   className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
+                            <input type={"text"} id={"player-id"} name={"CodJugador"} value={formData.CodJugador} onChange={handleInputChange}
+                                   className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
+                                   readOnly={true}/>
                         </div>
 
                         <div id={"team-id"} className={"flex flex-col gap-2 w-[25%]"}>
                             <label htmlFor={"team-id"} className={"text-[#F0E0D6] text-lg"}>Team ID</label>
-                            <input type={"text"} id={"team-id"} name={"teamId"} value={formData.teamId}  onChange={handleInputChange}
-                                   className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
+                            <select
+                                name={"CodEquipo"}
+                                value={formData.CodEquipo}
+                                onChange={handleInputChange}
+                                className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
+                            >
+                                <option value="">Select a Team</option>
+                                {teams.map((team, index) => (
+                                    <option className={"text-black"} key={index} value={team.CodEquipo}>
+                                        {team.Nombre + " (" + team.CodEquipo + ")"}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div id={"number"} className={"flex flex-col gap-2 w-[50%]"}>
                             <label htmlFor={"number"} className={"text-[#F0E0D6] text-lg"}>Number</label>
-                            <input type={"number"} id={"number"} name={"number"} value={formData.number}  onChange={handleInputChange}
+                            <input type={"number"} id={"number"} name={"Numero"} value={formData.Numero}
+                                   onChange={handleInputChange}
                                    className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
                         </div>
 
@@ -74,26 +178,26 @@ export default function CreatePlayer(){
 
                     <div id={"player-names"} className={"flex flex-row gap-5 w-full"}>
                         <div id={"name1"} className={"flex flex-col gap-2 w-[25%]"}>
-                            <label htmlFor={"name"} className={"text-[#F0E0D6] text-lg"}>First Name</label>
-                            <input type={"text"} id={"name1"} name={"name1"} value={formData.name1}  onChange={handleInputChange}
+                            <label htmlFor={"name1"} className={"text-[#F0E0D6] text-lg"}>First Name</label>
+                            <input type={"text"} id={"name1"} name={"Nombre1"} value={formData.Nombre1}  onChange={handleInputChange}
                                    className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
                         </div>
 
                         <div id={"name2"} className={"flex flex-col gap-2 w-[25%]"}>
                             <label htmlFor={"name2"} className={"text-[#F0E0D6] text-lg"}>Second Name</label>
-                            <input type={"text"} id={"name2"} name={"name2"} value={formData.name2} onChange={handleInputChange}
+                            <input type={"text"} id={"name2"} name={"Nombre2"} value={formData.Nombre2} onChange={handleInputChange}
                                    className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
                         </div>
 
                         <div id={"lastname1"} className={"flex flex-col gap-2 w-[25%]"}>
                             <label htmlFor={"lastname1"} className={"text-[#F0E0D6] text-lg"}>First Lastname</label>
-                            <input type={"text"} id={"lastname1"} name={"lastname1"} value={formData.lastname1}  onChange={handleInputChange}
+                            <input type={"text"} id={"lastname1"} name={"Apellido1"} value={formData.Apellido1}  onChange={handleInputChange}
                                    className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
                         </div>
 
                         <div id={"lastname2"} className={"flex flex-col gap-2 w-[25%]"}>
                             <label htmlFor={"lastname2"} className={"text-[#F0E0D6] text-lg"}>Second Lastname</label>
-                            <input type={"text"} id={"lastname2"} name={"lastname2"} value={formData.lastname2}  onChange={handleInputChange}
+                            <input type={"text"} id={"lastname2"} name={"Apellido2"} value={formData.Apellido2}  onChange={handleInputChange}
                                    className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
                         </div>
                     </div>
@@ -102,18 +206,28 @@ export default function CreatePlayer(){
                     <div id={"secondary-player-info"} className={"flex flex-row gap-5 w-full"}>
                         <div id={"city-born"} className={"flex flex-col gap-2 w-full"}>
                             <label htmlFor={"city-born"} className={"text-[#F0E0D6] text-lg"}>City of Birth</label>
-                            <input type={"text"} id={"city-born"} name={"cityBorn"} value={formData.cityBorn}  onChange={handleInputChange}
-                                   className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
+                            <select
+                                name={"CiudadNacim"}
+                                value={formData.CiudadNacim}
+                                onChange={handleInputChange}
+                                className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
+                            >
+                                <option value="">Select a city</option>
+                                {cities.map((city, index) => (
+                                    <option className={"text-black"} key={index} value={city.CodCiudad}>
+                                        {city.Nombre + " (" + city.CodCiudad + ")"}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div id={"year-born"} className={"flex flex-col gap-2 w-full"}>
                             <label htmlFor={"year-born"} className={"text-[#F0E0D6] text-lg"}>Year of Birth</label>
-                            <input type={"date"} id={"year-born"} name={"yearBorn"} value={formData.yearBorn}  onChange={handleInputChange}
+                            <input type={"date"} id={"year-born"} name={"FechaNacim"} value={formData.FechaNacim}
+                                   onChange={handleInputChange}
                                    className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
                         </div>
                     </div>
-
-
 
 
                 </div>

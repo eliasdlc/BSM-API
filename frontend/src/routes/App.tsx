@@ -9,6 +9,7 @@ import TeamScreen from "../pages/team-screen.tsx";
 import PlayerScreen from "../pages/player-screen.tsx";
 import CreateTeam from "../pages/create-team.tsx";
 import CreatePlayer from "../pages/create-player.tsx";
+import ModifyTeam from "../pages/modify-team.tsx";
 
 function App() {
     const location = useLocation(); // Obtiene la ruta actual
@@ -27,6 +28,7 @@ function App() {
                     {/*<Route path="/game/modify-game" element={<ModifyGame />} />*/}
                     <Route path="/team" element={<TeamScreen />} />
                     <Route path="/team/create-team" element={<CreateTeam />} />
+                    <Route path="/team/modify-team" element={<ModifyTeam />} />
                     <Route path="/player" element={<PlayerScreen />} />
                     <Route path="/player/create-player" element={<CreatePlayer />} />
                 </Routes>

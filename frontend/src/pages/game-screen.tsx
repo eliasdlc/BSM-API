@@ -1,48 +1,57 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Helmet } from "react-helmet";
 import { ListColumnConfig } from "../types/types.ts";
 import { GenericList } from "../components/List";
 import {useNavigate} from "react-router-dom";
+import axios from "axios";
 
 enum GameScreenSection {
     ModifyGame = "Modify Game (Select an element)",
+    DeleteGame = "Delete Game",
     CreateGame = "Create Game"
 }
 
 // Tipo de datos de ejemplo
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    age: number;
+interface Game {
+    CodJuego: string;
+    Descripcion: string;
+    Equipo1: string;
+    Equipo2: string;
+    Fecha: string;
 }
 
 function TextButtons({
                          buttons,
-                         activeButton,
+                         isGameSelected,
                          onButtonClick,
                          className
                      }: {
     buttons: string[],
-    activeButton: string,
+    isGameSelected: boolean,
     onButtonClick: (button: string) => void,
     className?: string
 }) {
     return (
         <div className={className}>
             {buttons && buttons.length > 0 ? (
-                buttons.map((text, index) => (
-                    <button
-                        key={index}
-                        className={`bg-[#ffefe3] text-lg rounded-[16px] p-2 w-full h-full normal-shadow
-                ${activeButton === text
-                            ? "text-[#211f1d] font-bold" // Solo cambiar el color y estilo cuando esté activo
-                            : "text-opacity-50 text-[#211f1d]"}`}
-                        onClick={() => onButtonClick(text)}
-                    >
-                        {text}
-                    </button>
-                ))
+                buttons.map((text, index) => {
+                    // Determinamos si un botón debe estar activo
+                    const isActive =
+                        (text === GameScreenSection.CreateGame && !isGameSelected) ||
+                        (isGameSelected && (text === GameScreenSection.ModifyGame || text === GameScreenSection.DeleteGame));
+
+                    return (
+                        <button
+                            key={index}
+                            className={`bg-[#ffefe3] text-lg rounded-[16px] p-2 w-full h-full normal-shadow ${
+                                isActive ? "text-[#211f1d] font-bold" : "text-opacity-50 text-[#211f1d]"
+                            }`}
+                            onClick={() => onButtonClick(text)}
+                        >
+                            {text}
+                        </button>
+                    );
+                })
             ) : (
                 <div>No buttons available</div>
             )}
@@ -51,15 +60,31 @@ function TextButtons({
 }
 
 export default function GameScreen() {
-    const buttonsList = [GameScreenSection.ModifyGame, GameScreenSection.CreateGame];
+    const buttonsList = [GameScreenSection.ModifyGame, GameScreenSection.DeleteGame, GameScreenSection.CreateGame];
     const [, setActiveSection] = useState<GameScreenSection>(GameScreenSection.ModifyGame);
+    const [selectedGame, setSelectedGame] = useState<Game | undefined>(undefined);
+    const [games, setGames] = useState<Game[]>([]);
+    const [, setLoading] = useState<boolean>(true);
 
-    // Estado para almacenar el usuario seleccionado
-    const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
-
-    const allowModify = (user: User) => {
-        setSelectedUser(user);
+    const allowModify = (user: Game) => {
+        setSelectedGame(user);
     };
+
+
+    useEffect(() => {
+        const fetchPlayers = async () => {
+            try {
+                const response = await axios.get<Game[]>("http://localhost:3000/Juego");
+                setGames(response.data);
+            } catch (error) {
+                console.error("Error fetching games:", error);
+            } finally {
+                setLoading(false); // Fin de la carga
+            }
+        };
+
+        fetchPlayers().then(() => console.log("Games fetched"));
+    }, []);
 
     const navigate = useNavigate();
 
@@ -74,51 +99,64 @@ export default function GameScreen() {
             }
         } else if (section === GameScreenSection.ModifyGame) {
             //navigate("/modify-game"); // Navegar a la página de modificación
+        } else if (section === GameScreenSection.DeleteGame) {
+            if (selectedGame) {
+                // Mostrar alerta de confirmación antes de eliminar
+                const confirmDelete = window.confirm(`Are you sure you want to delete the game ${selectedGame.CodJuego}?`);
+                if (confirmDelete) {
+                    deleteGame(selectedGame.CodJuego); // Eliminar el equipo
+                }
+            }
+        }
+
+    }
+
+    const deleteGame = async (gameId: string) => {
+        try {
+            const cleanGameId = gameId.trim();
+            const response = await axios.delete(`http://localhost:3000/Juego/${cleanGameId}`);
+
+            console.log(response.data);
+            alert("Game deleted successfully");
+
+            // Actualizar la lista de equipos después de la eliminación
+            setGames(games.filter((game) => game.CodJuego !== gameId));
+            setSelectedGame(undefined); // Limpiar la selección del equipo
+        } catch (error) {
+            console.error("Error deleting game:", error);
+            alert("Error deleting game");
         }
     };
 
-    // Datos de ejemplo
-    const users: User[] = [
-        { id: 1, name: "Juan Pérez", email: "juan@example.com", age: 30 },
-        { id: 2, name: "María García", email: "maria@example.com", age: 25 },
-        { id: 3, name: "Juan Pérez", email: "juan@example.com", age: 30 },
-        { id: 4, name: "María García", email: "maria@example.com", age: 25 },
-        { id: 5, name: "Juan Pérez", email: "juan@example.com", age: 30 },
-        { id: 6, name: "María García", email: "maria@example.com", age: 25 },
-        { id: 7, name: "Juan Pérez", email: "juan@example.com", age: 30 },
-        { id: 8, name: "María García", email: "maria@example.com", age: 25 },
-        { id: 9, name: "Juan Pérez", email: "juan@example.com", age: 30 },
-        { id: 10, name: "María García", email: "maria@example.com", age: 25 }
-    ];
 
-    const userColumns: ListColumnConfig<User>[] = [
+
+    const userColumns: ListColumnConfig<Game>[] = [
         {
-            key: "id",
+            key: "CodJuego",
             header: "ID",
-            width: "0.5fr",
             render: (value: string | number): JSX.Element => (
                 <span className="font-bold text-[#F5672D]">#{value}</span>
             )
         },
         {
-            key: "name",
-            header: "Nombre",
-            width: "1.5fr"
+            key: "Descripcion",
+            header: "Description",
         },
         {
-            key: "email",
-            header: "Correo Electrónico",
-            width: "2fr"
+            key: "Equipo1",
+            header: "Local Team",
         },
         {
-            key: "age",
-            header: "Edad",
-            width: "0.5fr",
-            render: (value: number | string): string => `${value} años`
+            key: "Equipo2",
+            header: "Visitor Team",
+        },
+        {
+            key: "Fecha",
+            header: "Date",
         }
     ];
 
-    const rowClassName = (_item: User, index: number, isSelected?: boolean) =>
+    const rowClassName = (_item: Game, index: number, isSelected?: boolean) =>
         isSelected
             ? "bg-[#F5672D] text-white"
             : index % 2 === 0
@@ -131,33 +169,33 @@ export default function GameScreen() {
                 <title>Game Screen</title>
             </Helmet>
 
-            <header className="flex flex-col gap-3 text-white text-inter bg-[#312D2A] rounded-[32px] w-full h-[10%] p-5 text-lg text-extra bold justify-center">
+            <header
+                className="flex flex-col gap-3 text-white text-inter bg-[#312D2A] rounded-[32px] w-full h-[10%] p-5 text-lg text-extra bold justify-center">
                 <h1 className="text-white text-2xl font-bold">Manage Games</h1>
             </header>
 
             <div className="flex flex-col gap-4 w-full flex-grow">
                 <div className="bg-[#312D2A] rounded-[32px] w-full h-[85%] flex grow p-5">
-                    <GenericList<User>
-                        data={users}
+                    <GenericList<Game>
+                        data={games}
                         columns={userColumns}
                         rowClassName={rowClassName}
                         className="mx-auto w-full"
                         onRowClick={allowModify}
-                        selectedItem={selectedUser}
+                        selectedItem={selectedGame}
                     />
                 </div>
                 <div className="w-full h-[15%] bg-gray bg-[#312d2a] rounded-[32px]">
                     <TextButtons
                         className="flex flex-row gap-5 p-5 w-full h-full"
                         buttons={buttonsList}
-                        activeButton={selectedUser ? GameScreenSection.ModifyGame : GameScreenSection.CreateGame}
-                        onButtonClick={(section) => handleButtonClick(section)}
+                        isGameSelected={!!selectedGame}
+                        onButtonClick={(section) => handleButtonClick(section as GameScreenSection)}
                     />
                 </div>
             </div>
 
         </div>
-
 
     );
 }

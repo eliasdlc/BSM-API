@@ -1,18 +1,81 @@
-import { useState, FormEvent } from "react";
+import {useState, FormEvent, useEffect, ChangeEvent} from "react";
 import {useNavigate} from "react-router-dom";
+import axios from "axios";
+
+interface Team {
+    CodEquipo: string;
+    Nombre: string;
+    CodCiudad: string;
+}
 
 export default function CreateGame() {
     // Estado para manejar los datos del formulario
     const [formData, setFormData] = useState({
-        localTeam: "",
-        visitorTeam: "",
-        gameDate: "",
-        gameDescription: ""
+        CodJuego: "",
+        Equipo1: "",
+        Equipo2: "",
+        Fecha: "",
+        Descripcion: ""
     });
 
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [, setError] = useState<string | null>(null); // Estado de error
+    const [, setLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        const fetchTeams = async () => {
+            try {
+                const response = await axios.get<Team[]>("http://localhost:3000/Equipo");
+                setTeams(response.data);
+            } catch (error) {
+                console.error("Error fetching players:", error);
+            } finally {
+                setLoading(false); // Fin de la carga
+            }
+        };
+
+        fetchTeams().then(() => console.log("Teams fetched"));
+    }, []);
+
+    useEffect(() => {
+        const fetchAllGamesAndSetNextId = async () => {
+            try {
+                // Obtener todos los equipos
+                const response = await axios.get('http://localhost:3000/Juego');
+                const games = response.data; // Asumiendo que la respuesta es un array de equipos
+
+                if (games.length > 0) {
+                    // Obtener el último equipo
+                    const lastGames = games[games.length - 1];
+                    const lastGameId = lastGames.CodJuego;
+
+                    // Incrementar el ID
+                    const nextIdNum = parseInt(lastGameId, 10) + 1;
+                    const nextId = nextIdNum.toString().padStart(4, '0'); // Asegurarse de que tenga 4 dígitos
+
+                    // Asignar el siguiente ID al estado
+                    setFormData((prevData) => ({
+                        ...prevData,
+                        CodJuego: nextId
+                    }));
+                } else {
+                    // Si no hay equipos, iniciar con el primer ID
+                    setFormData((prevData) => ({
+                        ...prevData,
+                        CodJuego: '0001'
+                    }));
+                }
+            } catch (error) {
+                console.error('Error fetching teams:', error);
+            }
+        };
+
+        fetchAllGamesAndSetNextId();
+    }, []);
+
     // Manejar el cambio en los inputs
-    const handleInputChange = (e: FormEvent<HTMLInputElement>) => {
-        const { name, value } = e.target as HTMLInputElement;
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target as HTMLInputElement | HTMLSelectElement;
         setFormData((prevData) => ({
             ...prevData,
             [name]: value
@@ -20,9 +83,28 @@ export default function CreateGame() {
     };
 
     // Manejar el envío del formulario
-    const handleSubmit = () => {
+    const handleSubmit = async (e: FormEvent) => {
         console.log("Form Data:", formData);
-        // Aquí puedes hacer la llamada a la API o lógica para guardar los datos en la base de datos
+        e.preventDefault(); // Evitar el comportamiento por defecto del formulario
+        setLoading(true);
+
+        if ( formData.Equipo1 != formData.Equipo2 ) {
+            try {
+                // Hacer la solicitud para guardar el equipo
+                await axios.post("http://localhost:3000/Juego", formData);
+                alert("Juego created successfully!");
+                navigate("/game"); // Redirigir a la lista de equipos
+            } catch (error) {
+                console.error("Error creating game:", error);
+                setError("Failed to create game.");
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            alert("The teams must be different!");
+        }
+
+
     };
 
     const navigate = useNavigate();
@@ -46,32 +128,54 @@ export default function CreateGame() {
 
                 <div id={"game-info"} className={"flex flex-col gap-5"}>
                     <div id={"team-names"} className={"flex flex-row gap-5 w-full"}>
+                        <div id={"game-id"} className={"flex flex-col gap-2 w-[50%]"}>
+                            <label htmlFor={"game-id"} className={"text-[#F0E0D6] text-lg"}>Game ID</label>
+                            <input
+                                type={"text"}
+                                id={"game-id"}
+                                name={"CodJuego"}
+                                value={formData.CodJuego} // Asegurarse de que CodEquipo tiene el valor formateado
+                                onChange={handleInputChange}
+                                className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
+                                readOnly={true}
+                            />
+                        </div>
                         <div id={"local-team"} className={"flex flex-col gap-2 w-full"}>
                             <label htmlFor={"local-team"} className={"text-[#F0E0D6] text-lg"}>
                                 Local Team Name
                             </label>
-                            <input
-                                type={"text"}
-                                id={"local-team"}
-                                name={"localTeam"} // Cambié el nombre para que coincida con el estado
-                                value={formData.localTeam} // Usamos el valor del estado
+                            <select
+                                name={"Equipo1"}
+                                value={formData.Equipo1}
                                 onChange={handleInputChange}
                                 className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
-                            />
+                            >
+                                <option value="">Select a city</option>
+                                {teams.map((team, index) => (
+                                    <option className={"text-black"} key={index} value={team.CodEquipo}>
+                                        {team.Nombre + " (" + team.CodEquipo + ")"}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div id={"visitor-team"} className={"flex flex-col gap-2 w-full"}>
                             <label htmlFor={"visitor-team"} className={"text-[#F0E0D6] text-lg"}>
                                 Visitor Team Name
                             </label>
-                            <input
-                                type={"text"}
-                                id={"visitor-team"}
-                                name={"visitorTeam"} // Cambié el nombre para que coincida con el estado
-                                value={formData.visitorTeam} // Usamos el valor del estado
+                            <select
+                                name={"Equipo2"}
+                                value={formData.Equipo2}
                                 onChange={handleInputChange}
                                 className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
-                            />
+                            >
+                                <option value="">Select a city</option>
+                                {teams.map((team, index) => (
+                                    <option className={"text-black"} key={index} value={team.CodEquipo}>
+                                        {team.Nombre + " (" + team.CodEquipo + ")"}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
@@ -82,8 +186,8 @@ export default function CreateGame() {
                         <input
                             type={"date"}
                             id={"game-date"}
-                            name={"gameDate"} // Cambié el nombre para que coincida con el estado
-                            value={formData.gameDate} // Usamos el valor del estado
+                            name={"Fecha"} // Cambié el nombre para que coincida con el estado
+                            value={formData.Fecha} // Usamos el valor del estado
                             onChange={handleInputChange}
                             className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
                         />
@@ -96,8 +200,8 @@ export default function CreateGame() {
                         <input
                             type={"text"}
                             id={"game-description"}
-                            name={"gameDescription"} // Cambié el nombre para que coincida con el estado
-                            value={formData.gameDescription} // Usamos el valor del estado
+                            name={"Descripcion"} // Cambié el nombre para que coincida con el estado
+                            value={formData.Descripcion} // Usamos el valor del estado
                             onChange={handleInputChange}
                             className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full h-[150px] normal-shadow"}
                         />

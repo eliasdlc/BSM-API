@@ -1,48 +1,53 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ListColumnConfig } from "../types/types.ts";
 import { GenericList } from "../components/List";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 enum TeamScreenSection {
     ModifyTeam = "Modify Team (Select an element)",
+    DeleteTeam = "Delete Team",
     CreateTeam = "Create Team"
 }
 
 interface Team {
-    id: number;
-    name: string;
-    city: string;
-    foundationYear: number;
-    stadium: string;
-    championshipsWon: number;
+    CodEquipo: string;
+    Nombre: string;
+    CodCiudad: string;
 }
 
 function TextButtons({
                          buttons,
-                         activeButton,
                          onButtonClick,
-                         className
+                         className,
+                         isTeamSelected,
                      }: {
     buttons: string[],
-    activeButton: string,
     onButtonClick: (button: string) => void,
-    className?: string
+    className?: string,
+    isTeamSelected: boolean,
 }) {
     return (
         <div className={className}>
             {buttons && buttons.length > 0 ? (
-                buttons.map((text, index) => (
-                    <button
-                        key={index}
-                        className={`bg-[#ffefe3] text-lg rounded-[16px] p-2 w-full h-full normal-shadow
-                            ${activeButton === text
-                            ? "text-[#211f1d] font-bold"
-                            : "text-opacity-50 text-[#211f1d]"}`}
-                        onClick={() => onButtonClick(text)}
-                    >
-                        {text}
-                    </button>
-                ))
+                buttons.map((text, index) => {
+                    // Determinamos si un botón debe estar activo
+                    const isActive =
+                        (text === TeamScreenSection.CreateTeam && !isTeamSelected) ||
+                        (isTeamSelected && (text === TeamScreenSection.ModifyTeam || text === TeamScreenSection.DeleteTeam));
+
+                    return (
+                        <button
+                            key={index}
+                            className={`bg-[#ffefe3] text-lg rounded-[16px] p-2 w-full h-full normal-shadow ${
+                                isActive ? "text-[#211f1d] font-bold" : "text-opacity-50 text-[#211f1d]"
+                            }`}
+                            onClick={() => onButtonClick(text)}
+                        >
+                            {text}
+                        </button>
+                    );
+                })
             ) : (
                 <div>No buttons available</div>
             )}
@@ -50,10 +55,29 @@ function TextButtons({
     );
 }
 
+
 export default function TeamScreen() {
-    const buttonsList = [TeamScreenSection.ModifyTeam, TeamScreenSection.CreateTeam];
-    const [, setActiveSection] = useState<TeamScreenSection>(TeamScreenSection.ModifyTeam);
+    const buttonsList = [TeamScreenSection.ModifyTeam, TeamScreenSection.DeleteTeam, TeamScreenSection.CreateTeam];
+    const [, setActiveSection] = useState<TeamScreenSection>(TeamScreenSection.CreateTeam);
     const [selectedTeam, setSelectedTeam] = useState<Team | undefined>(undefined);
+
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [, setLoading] = useState<boolean>(true); // Manejo del estado de carga
+
+    useEffect(() => {
+        const fetchTeams = async () => {
+            try {
+                const response = await axios.get<Team[]>("http://localhost:3000/Equipo");
+                setTeams(response.data);
+            } catch (error) {
+                console.error("Error fetching players:", error);
+            } finally {
+                setLoading(false); // Fin de la carga
+            }
+        };
+
+        fetchTeams().then(() => console.log("Teams fetched"));
+    }, []);
 
     const allowModify = (team: Team) => {
         console.log('Selected team:', team);
@@ -72,49 +96,49 @@ export default function TeamScreen() {
                 console.error("Error al navegar:", error);
             }
         } else if (section === TeamScreenSection.ModifyTeam) {
-            //navigate("/modify-game"); // Navegar a la página de modificación
+            // Navegar a la página de modificación (esto es un ejemplo)
+            navigate("/team/modify-team", { state: { team: selectedTeam } });
+        } else if (section === TeamScreenSection.DeleteTeam) {
+            if (selectedTeam) {
+                // Mostrar alerta de confirmación antes de eliminar
+                const confirmDelete = window.confirm(`Are you sure you want to delete the team ${selectedTeam.Nombre}?`);
+                if (confirmDelete) {
+                    deleteTeam(selectedTeam.CodEquipo); // Eliminar el equipo
+                }
+            }
         }
     };
 
-    const teams: Team[] = [
-        { id: 1, name: "New York Knights", city: "New York", foundationYear: 1920, stadium: "Knights Arena", championshipsWon: 5 },
-        { id: 2, name: "Los Angeles Stars", city: "Los Angeles", foundationYear: 1945, stadium: "Star Dome", championshipsWon: 3 },
-        { id: 3, name: "Chicago Bears", city: "Chicago", foundationYear: 1935, stadium: "Bear Grounds", championshipsWon: 7 },
-        { id: 4, name: "Houston Hawks", city: "Houston", foundationYear: 1950, stadium: "Hawk Nest", championshipsWon: 2 },
-        { id: 5, name: "Phoenix Flames", city: "Phoenix", foundationYear: 1980, stadium: "Flame Field", championshipsWon: 1 },
-        { id: 6, name: "Philadelphia Eagles", city: "Philadelphia", foundationYear: 1925, stadium: "Eagle Stadium", championshipsWon: 4 },
-        { id: 7, name: "San Antonio Spurs", city: "San Antonio", foundationYear: 1968, stadium: "Spur Arena", championshipsWon: 6 },
-        { id: 8, name: "San Diego Sharks", city: "San Diego", foundationYear: 1990, stadium: "Shark Tank", championshipsWon: 2 },
-        { id: 9, name: "Dallas Titans", city: "Dallas", foundationYear: 1915, stadium: "Titan Coliseum", championshipsWon: 8 },
-        { id: 10, name: "San Jose Giants", city: "San Jose", foundationYear: 1975, stadium: "Giant Park", championshipsWon: 3 },
-    ];
+    const deleteTeam = async (teamId: string) => {
+        try {
+            const response = await axios.delete(`http://localhost:3000/Equipo/${teamId}`);
+            console.log(response.data);
+            alert("Team deleted successfully");
+
+            // Actualizar la lista de equipos después de la eliminación
+            setTeams(teams.filter((team) => team.CodEquipo !== teamId));
+            setSelectedTeam(undefined); // Limpiar la selección del equipo
+        } catch (error) {
+            console.error("Error deleting team:", error);
+            alert("Error deleting team");
+        }
+    };
+
 
     const teamColumns: ListColumnConfig<Team>[] = [
         {
-            key: 'id',
+            key: 'CodEquipo',
             header: 'ID',
             render: (value: string | number): JSX.Element =>
                 (<span className="font-bold text-[#F5672D]">#{value}</span>),
         },
         {
-            key: 'name',
+            key: 'Nombre',
             header: 'Team Name',
         },
         {
-            key: 'city',
+            key: 'CodCiudad',
             header: 'City',
-        },
-        {
-            key: 'foundationYear',
-            header: 'Foundation Year',
-        },
-        {
-            key: 'stadium',
-            header: 'Stadium',
-        },
-        {
-            key: 'championshipsWon',
-            header: 'Championships Won',
         },
     ];
 
@@ -143,9 +167,8 @@ export default function TeamScreen() {
                     <TextButtons
                         className="flex flex-row gap-5 p-5 w-full h-full"
                         buttons={buttonsList}
-                        activeButton={selectedTeam ? TeamScreenSection.ModifyTeam : TeamScreenSection.CreateTeam}
-                        onButtonClick={(section) => handleButtonClick(section as TeamScreenSection)}
-                    />
+                        isTeamSelected={!!selectedTeam}
+                        onButtonClick={(section) => handleButtonClick(section as TeamScreenSection)} />
                 </div>
             </div>
         </div>
