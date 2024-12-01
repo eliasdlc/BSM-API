@@ -18,6 +18,9 @@ import ModifyGame from "../pages/modify-game.tsx";
 import ModifyPlayer from "../pages/modify-player.tsx";
 import ModifyStatistic from "../pages/modifiy-statistics.tsx";
 import CreateStatistic from "../pages/create-statistics.tsx";
+import StoredProcedure from "../pages/statistics.tsx";
+import GameDetails from "../pages/game-details.tsx";
+import MainScreen from "../pages/main-screen.tsx";
 
 function App() {
     const location = useLocation(); // Obtiene la ruta actual
@@ -40,6 +43,9 @@ function App() {
             <main className="flex flex-row w-full flex-wrap gap-5">
                 <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path={"/main-screen"} element={<MainScreen />} />
+                    <Route path="/home/stored-procedure" element={<StoredProcedure />} />
+                    <Route path="/home/stored-procedure/:gameId" element={<GameDetails />} />
                     <Route path="/game" element={<GameScreen />} />
                     <Route path="/game/create-game" element={<CreateGame />} />
                     <Route path="/game/modify-game" element={<ModifyGame />} />

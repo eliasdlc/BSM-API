@@ -17,7 +17,7 @@ export function GenericList<T>({
 
 
     return (
-        <div className={`w-full border-[#ffefe3] rounded-[16px] overflow-hidden shadow-md justify-center ${className}`}>
+        <div className={`w-full h-full border-[#ffefe3] rounded-[16px] overflow-hidden shadow-md justify-center ${className}`}>
             {/* Encabezado de la tabla */}
             {columns.length > 0 && (
                 <div

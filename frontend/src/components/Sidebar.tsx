@@ -76,7 +76,7 @@ export default function Sidebar({ className }: { className?: string }) {
         // Navega a la ruta correspondiente
         switch (button) {
             case "home":
-                navigate("/");
+                navigate("/main-screen");
                 break;
             case "game":
                 navigate("/game");

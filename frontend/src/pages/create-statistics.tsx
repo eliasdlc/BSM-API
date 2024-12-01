@@ -28,29 +28,28 @@ interface Game {
     Fecha: string;
 }
 
-export default function CreateStatistic(){
+export default function CreateStatistic() {
     const [formData, setFormData] = useState({
         CodJugador: "",
         CodJuego: "",
         CodEstadistica: "",
         Cantidad: "",
-    })
+    });
 
-    const [players, setPlayer] = useState<Player[]>([]);
-    const [, setFilteredPlayers] = useState<Player[]>([]); // Para los jugadores filtrados por equipo
-    const [games, setGame] = useState<Game[]>([]);
-    const [, setLoading] = useState<boolean>(false);
+    const [players, setPlayers] = useState<Player[]>([]);
+    const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]); // Jugadores filtrados
+    const [games, setGames] = useState<Game[]>([]);
+    const [stats, setStats] = useState<Statictic[]>([]);
+    const [isPlayerDisabled, setIsPlayerDisabled] = useState<boolean>(true); // Deshabilitar jugadores por defecto
     const [, setError] = useState<string | null>(null);
-    const [stats, setStat] = useState<Statictic[]>([]);
-    const [isPlayerDisabled, setIsPlayerDisabled] = useState<boolean>(true); // Estado de habilitación del jugador
     const navigate = useNavigate();
 
+    // Obtener datos de juegos
     useEffect(() => {
-        // Obtener las ciudades
         const fetchGames = async () => {
             try {
                 const response = await axios.get("http://localhost:3000/Juego");
-                setGame(response.data);
+                setGames(response.data);
             } catch (err) {
                 console.error("Error fetching games:", err);
                 setError("Error fetching games");
@@ -60,39 +59,36 @@ export default function CreateStatistic(){
         fetchGames();
     }, []);
 
+    // Obtener datos de jugadores
     useEffect(() => {
         const fetchPlayers = async () => {
             try {
                 const response = await axios.get<Player[]>("http://localhost:3000/Jugador");
-                setPlayer(response.data);
+                setPlayers(response.data);
             } catch (error) {
                 console.error("Error fetching players:", error);
-            } finally {
-                setLoading(false);
             }
         };
 
-        fetchPlayers().then(() => console.log("Player fetched"));
+        fetchPlayers();
     }, []);
 
+    // Obtener datos de estadísticas
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 const response = await axios.get<Statictic[]>("http://localhost:3000/Estadistica");
-                setStat(response.data);
+                setStats(response.data);
             } catch (error) {
                 console.error("Error fetching stats:", error);
-            } finally {
-                setLoading(false); // Fin de la carga
             }
         };
 
-        fetchStats()
+        fetchStats();
     }, []);
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const target = e.target as HTMLInputElement | HTMLSelectElement;
-        const { name, value } = target;
+        const { name, value } = e.target;
 
         setFormData((prevData) => ({
             ...prevData,
@@ -101,57 +97,64 @@ export default function CreateStatistic(){
     };
 
     const handleGameSelect = (e: ChangeEvent<HTMLSelectElement>) => {
-        const selectedGame = e.target.value;
+        const selectedGameId = e.target.value;
         setFormData((prevData) => ({
             ...prevData,
-            CodJuego: selectedGame,
+            CodJuego: selectedGameId,
         }));
 
-        // Filtrar jugadores por el juego seleccionado
-        const selectedGameObj = games.find(game => game.CodJuego === selectedGame);
-        if (selectedGameObj === undefined) {
-            setFilteredPlayers([]);
-            setIsPlayerDisabled(true); // Deshabilitar selección de jugador
-
-        } else if (selectedGameObj) {
-            // Filtrar jugadores por equipo
-            const teamPlayers = players.filter(player => player.CodEquipo === selectedGameObj.Equipo1 || player.CodEquipo === selectedGameObj.Equipo2);
+        // Encontrar el juego seleccionado
+        const selectedGame = games.find((game) => game.CodJuego === selectedGameId);
+        if (selectedGame) {
+            // Filtrar jugadores que pertenezcan a los equipos del juego
+            const teamPlayers = players.filter(
+                (player) =>
+                    player.CodEquipo === selectedGame.Equipo1 || player.CodEquipo === selectedGame.Equipo2
+            );
             setFilteredPlayers(teamPlayers);
-            setIsPlayerDisabled(false); // Habilitar selección de jugador
+            setIsPlayerDisabled(false); // Habilitar la selección de jugadores
+        } else {
+            setFilteredPlayers([]);
+            setIsPlayerDisabled(true); // Deshabilitar la selección de jugadores
         }
     };
 
     const handleSubmit = async (e: FormEvent) => {
-        console.log("Input Value: ", formData);
-        e.preventDefault(); // Evitar el comportamiento por defecto del formulario
-        setLoading(true);
-
-        // DONE: Verificar que el jugador elegido este en el equipo elegido y viceversa
-        // Lo mejor seria que primero elija el equipo y luego habilitar para que elija los jugadores de ese equipo
+        e.preventDefault(); // Prevenir el comportamiento por defecto del formulario
 
         if (!formData.CodJugador || !formData.CodJuego || !formData.CodEstadistica || !formData.Cantidad) {
             setError("Please fill all the fields.");
             alert("Please fill all the fields.");
-            setLoading(false);
-        } else {
-            try {
-                await axios.post("http://localhost:3000/EstadisticaJuego", formData);
-                alert("Game Statistic created successfully!");
-                navigate("/statistics");
-            } catch (error) {
-                console.error("Error creating Game Statistic:", error);
-                setError("Failed to create Game Statistic.");
-            } finally {
-                setLoading(false);
-            }
+            return;
         }
 
+        // Validar que el jugador seleccionado pertenece al equipo del juego
+        const selectedGame = games.find((game) => game.CodJuego === formData.CodJuego);
+        const selectedPlayer = players.find((player) => player.CodJugador === formData.CodJugador);
 
-    }
+        if (
+            !selectedGame ||
+            !selectedPlayer ||
+            (selectedPlayer.CodEquipo !== selectedGame.Equipo1 &&
+                selectedPlayer.CodEquipo !== selectedGame.Equipo2)
+        ) {
+            alert("The selected player does not belong to the selected game's teams.");
+            return;
+        }
+
+        try {
+            await axios.post("http://localhost:3000/EstadisticaJuego", formData);
+            alert("Game Statistic created successfully!");
+            navigate("/statistics");
+        } catch (error) {
+            console.error("Error creating Game Statistic:", error);
+            setError("Failed to create Game Statistic.");
+        }
+    };
 
     const goBackHandler = () => {
         navigate("/statistics");
-    }
+    };
 
     return (
         <div className={"h-full w-full gap-4 flex flex-col"}>
@@ -159,7 +162,6 @@ export default function CreateStatistic(){
                 <h1 className={"w-full text-xl text-[#F0E0D6] font-bold"}>Game Creation Process</h1>
 
                 <div id={"stat-info"} className={"flex flex-col gap-5"}>
-
                     <div id={"ids-info"} className={"flex flex-row gap-5 w-full"}>
                         <div id={"game-id"} className={"flex flex-col gap-2 w-full"}>
                             <label htmlFor={"game-id"} className={"text-[#F0E0D6] text-lg"}>Game ID</label>
@@ -169,7 +171,7 @@ export default function CreateStatistic(){
                                 onChange={handleGameSelect}
                                 className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
                             >
-                                <option value="CodJuego">Select a Game</option>
+                                <option value="">Select a Game</option>
                                 {games.map((game, index) => (
                                     <option className={"text-black"} key={index} value={game.CodJuego}>
                                         {game.Equipo1 + " vs " + game.Equipo2 + " (" + game.CodJuego + ")"}
@@ -187,8 +189,8 @@ export default function CreateStatistic(){
                                 className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
                                 disabled={isPlayerDisabled}
                             >
-                                <option value="CodJugador">Select a Player</option>
-                                {players.map((player, index) => (
+                                <option value="">Select a Player</option>
+                                {filteredPlayers.map((player, index) => (
                                     <option className={"text-black"} key={index} value={player.CodJugador}>
                                         {player.Nombre1 + " " + player.Apellido1 + " (" + player.CodJugador + ")"}
                                     </option>
@@ -204,7 +206,7 @@ export default function CreateStatistic(){
                                 onChange={handleInputChange}
                                 className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
                             >
-                                <option value="CodEstadistica">Select a Statistic</option>
+                                <option value="">Select a Statistic</option>
                                 {stats.map((stat, index) => (
                                     <option className={"text-black"} key={index} value={stat.CodEstadistica}>
                                         {stat.Descripcion + " - " + stat.Valor}
@@ -212,22 +214,22 @@ export default function CreateStatistic(){
                                 ))}
                             </select>
                         </div>
-
                     </div>
 
                     <div id={"cantidad"} className={"flex flex-row gap-5 w-full"}>
                         <div id={"cantidad"} className={"flex flex-col gap-2 w-[32.5%]"}>
                             <label htmlFor={"Cantidad"} className={"text-[#F0E0D6] text-lg"}>Cantidad</label>
-                            <input type={"number"} id={"cantidad"} name={"Cantidad"} value={formData.Cantidad}
-                                   onChange={handleInputChange}
-                                   className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}/>
+                            <input
+                                type={"number"}
+                                id={"cantidad"}
+                                name={"Cantidad"}
+                                value={formData.Cantidad}
+                                onChange={handleInputChange}
+                                className={"bg-[#F0E0D6] text-[#201f1d] text-lg p-2 rounded-2xl w-full normal-shadow"}
+                            />
                         </div>
-
                     </div>
-
-
                 </div>
-
             </div>
 
             <div id={"button-holder"}
@@ -247,6 +249,5 @@ export default function CreateStatistic(){
                 </div>
             </div>
         </div>
-
-    )
+    );
 }

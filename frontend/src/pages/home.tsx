@@ -1,6 +1,6 @@
 import { useState } from "react"; // Usamos useState de React
-import MainScreen from "./main-screen.tsx";
-import Statistics from "./statistics.tsx";
+import { useNavigate } from "react-router-dom"; // Importa useNavigate
+
 
 // Componente para los botones de la cabecera
 function TextButtons({
@@ -37,10 +37,10 @@ function TextButtons({
 // Componente principal
 export default function Home() {
     const headerButtons = ["Main Screen", "Statistics"];
+    const navigate = useNavigate(); // Inicializa el hook de navegación
 
-    // Usamos useState para manejar el estado de la vista activa y el botón activo
-    const [view, setView] = useState<string>("main-screen");
-    const [activeButton, setActiveButton] = useState<string>(headerButtons[0]); // Estado para el botón activo
+    // Estado para el botón activo
+    const [activeButton, setActiveButton] = useState<string>(headerButtons[0]);
 
     // Función para manejar el clic de los botones
     const handleButtonClick = (button: string) => {
@@ -48,14 +48,12 @@ export default function Home() {
 
         switch (button) {
             case "Main Screen":
-                setView("main-screen"); // Cambia la vista a 'main-screen'
+                navigate("/main-screen"); // Navega a la ruta principal
                 break;
             case "Statistics":
-                setView("statistics.tsx"); // Cambia la vista a 'statistics.tsx'
+                navigate("/home/stored-procedure"); // Navega a la ruta de estadísticas
                 break;
         }
-
-        console.log("view after click:", view); // Verifica la vista activa
     };
 
     return (
@@ -73,8 +71,7 @@ export default function Home() {
             {/* Main */}
             <div className="flex w-full h-full">
                 <div className="w-full h-full">
-                    {view === "main-screen" && <MainScreen />} {/* Si la vista es main-screen, renderiza el componente */}
-                    {view === "statistics.tsx" && <Statistics />} {/* Si la vista es statistics.tsx, renderiza el componente */}
+                    {/* El contenido ahora se maneja con enrutador */}
                 </div>
             </div>
         </div>
