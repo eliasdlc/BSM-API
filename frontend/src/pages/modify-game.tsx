@@ -1,5 +1,5 @@
-import {useState, FormEvent, useEffect, ChangeEvent} from "react";
-import {useNavigate} from "react-router-dom";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 interface Team {
@@ -8,120 +8,94 @@ interface Team {
     CodCiudad: string;
 }
 
-export default function CreateGame() {
-    // Estado para manejar los datos del formulario
+export default function ModifyGame() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const selectedGame = location.state?.game; // Obtener el equipo desde la navegación
+
     const [formData, setFormData] = useState({
         CodJuego: "",
+        Descripcion: "",
         Equipo1: "",
         Equipo2: "",
         Fecha: "",
-        Descripcion: ""
     });
 
     const [teams, setTeams] = useState<Team[]>([]);
-    const [, setError] = useState<string | null>(null); // Estado de error
-    const [, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchTeams = async () => {
+        // Inicializar el formulario con los datos del equipo seleccionado
+        if (selectedGame) {
+            setFormData({
+                CodJuego: selectedGame.CodJuego || "",
+                Descripcion: selectedGame.Descripcion || "",
+                Equipo1: selectedGame.Equipo1 || "",
+                Equipo2: selectedGame.Equipo2 || "",
+                Fecha: selectedGame.Fecha || "",
+            });
+        }
+    }, [selectedGame]);
+
+    useEffect(() => {
+        const fetchCities = async () => {
             try {
-                const response = await axios.get<Team[]>("http://localhost:3000/Equipo");
+                const response = await axios.get("http://localhost:3000/Equipo");
                 setTeams(response.data);
-            } catch (error) {
-                console.error("Error fetching players:", error);
-            } finally {
-                setLoading(false); // Fin de la carga
+            } catch (err) {
+                console.error("Error fetching cities:", err);
+                setError("Error fetching cities");
             }
         };
 
-        fetchTeams().then(() => console.log("Teams fetched"));
+        fetchCities();
     }, []);
 
-    useEffect(() => {
-        const fetchAllGamesAndSetNextId = async () => {
-            try {
-                // Obtener todos los equipos
-                const response = await axios.get('http://localhost:3000/Juego');
-                const games = response.data; // Asumiendo que la respuesta es un array de equipos
-
-                if (games.length > 0) {
-                    // Obtener el último equipo
-                    const lastGames = games[games.length - 1];
-                    const lastGameId = lastGames.CodJuego;
-
-                    // Incrementar el ID
-                    const nextIdNum = parseInt(lastGameId, 10) + 1;
-                    const nextId = nextIdNum.toString().padStart(4, '0'); // Asegurarse de que tenga 4 dígitos
-
-                    // Asignar el siguiente ID al estado
-                    setFormData((prevData) => ({
-                        ...prevData,
-                        CodJuego: nextId
-                    }));
-                } else {
-                    // Si no hay equipos, iniciar con el primer ID
-                    setFormData((prevData) => ({
-                        ...prevData,
-                        CodJuego: '0001'
-                    }));
-                }
-            } catch (error) {
-                console.error('Error fetching teams:', error);
-            }
-        };
-
-        fetchAllGamesAndSetNextId();
-    }, []);
-
-    // Manejar el cambio en los inputs
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target as HTMLInputElement | HTMLSelectElement;
+        const { name, value } = e.target;
         setFormData((prevData) => ({
             ...prevData,
-            [name]: value
+            [name]: value,
         }));
     };
 
-    // Manejar el envío del formulario
     const handleSubmit = async (e: FormEvent) => {
-        console.log("Form Data:", formData);
-        e.preventDefault(); // Evitar el comportamiento por defecto del formulario
-        setLoading(true);
+        e.preventDefault();
 
-        if (!formData.CodJuego || !formData.Equipo1 || !formData.Equipo2 || !formData.Fecha || !formData.Descripcion) {
-            setError("Please fill all the fields.");
-            alert("Please fill all the fields.");
-            setLoading(false);
-        } else if ( formData.Equipo1 != formData.Equipo2 ) {
-            try {
-                // Hacer la solicitud para guardar el equipo
-                await axios.post("http://localhost:3000/Juego", formData);
-                alert("Juego created successfully!");
-                navigate("/game"); // Redirigir a la lista de equipos
-            } catch (error) {
-                console.error("Error creating game:", error);
-                setError("Failed to create game.");
-            } finally {
-                setLoading(false);
-            }
-        } else {
-            alert("The teams must be different!");
+        if (!formData.CodJuego || !formData.Descripcion || !formData.Equipo1 || !formData.Equipo2 || !formData.Fecha) {
+            alert("Please fill all the required fields.");
+            return;
         }
 
+        if (!window.confirm("Are you sure you want to save these changes?")) {
+            return;
+        }
 
+        setLoading(true);
+        setError(null); // Limpiar el error antes de intentar la solicitud
+
+        try {
+            console.log("formData", formData);
+            console.log("formData.CodJuego", formData.CodJuego);
+            await axios.put(`http://localhost:3000/Juego/${formData.CodJuego}`, formData);
+            alert("Game updated successfully!");
+            navigate("/game");
+        } catch (error) {
+            console.error("Error updating game:", error);
+            setError("Failed to update game.");
+            alert("Game couldn't be saved due to an error: " + (error));
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const navigate = useNavigate();
-
-
-    // Manejar el retorno al Game Screen
     const goBackHandler = () => {
-        console.log("Go back to game screen");
         navigate("/game");
     };
 
     return (
-        <div className={"h-full w-full gap-4 flex flex-col"}>
+        <div className="h-screen w-full gap-4 flex flex-col p-5">
             <div
                 id={"formulario"}
                 className={"flex flex-col bg-[#312d2a] flex-grow gap-5 rounded-[32px] p-5"}
@@ -213,25 +187,20 @@ export default function CreateGame() {
                 </div>
             </div>
 
-            <div
-                id={"button-holder"}
-                className={"flex flex-row gap-5 bg-[#312d2a] h-[10%] w-full rounded-[32px] p-5 items-center justify-center"}
-            >
-                <div id={"go-back"} className={"flex-1"}>
-                    <button
-                        onClick={goBackHandler}
-                        className={"text-[#F0E0D6] text-1xl font-bold text-opacity-25 w-[100px] h-[50px] hover:text-opacity-100"}
-                    >
+            <div id="button-holder"
+                 className="flex flex-row gap-5 bg-[#312d2a] h-[10%] w-full rounded-[32px] p-5 items-center justify-center">
+                <div id="go-back" className="flex-1">
+                    <button onClick={goBackHandler}
+                            className="text-[#F0E0D6] text-1xl font-bold text-opacity-25 w-[100px] h-[50px] hover:text-opacity-100">
                         Go Back
                     </button>
                 </div>
 
-                <div id={"buttons"} className={"flex-2 items-end justify-center h-full"}>
-                    <button
-                        onClick={handleSubmit}
-                        className={"bg-[#F0E0D6] text-[#201f1d] text-1xl font-bold rounded-2xl w-full min-w-64 h-full normal-shadow"}
-                    >
-                        Save Game
+                <div id="buttons" className="flex-2 items-end justify-center h-full">
+                    <button onClick={handleSubmit}
+                            className="bg-[#F0E0D6] text-[#201f1d] text-1xl font-bold rounded-2xl w-full min-w-64 h-full normal-shadow"
+                            disabled={loading}>
+                        {loading ? "Saving..." : "Save Changes"}
                     </button>
                 </div>
             </div>

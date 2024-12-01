@@ -49,18 +49,24 @@ export function GenericList<T>({
                         No hay elementos para mostrar
                     </div>
                 ) : (
-                    data.map((item: T, index: number) => (
-                        <GenericListItem
-                            key={index}
-                            item={item}
-                            columns={columns}
-                            columnCount={columnCount}
-                            onRowClick={onRowClick}
-                            isSelected={JSON.stringify(selectedItem) === JSON.stringify(item)}
-                            rowClassName={rowClassName(item, index)}
-                        />
-                    ))
+                    data.map((item: T, index: number) => {
+                        const rowClass = rowClassName(item, index);
+                        const isSelectedRow = JSON.stringify(selectedItem) === JSON.stringify(item);
+
+                        return (
+                            <GenericListItem
+                                key={index}
+                                item={item}
+                                columns={columns}
+                                columnCount={columnCount}
+                                onRowClick={onRowClick}
+                                isSelected={isSelectedRow}
+                                rowClassName={rowClass}
+                            />
+                        );
+                    })
                 )}
+
             </div>
         </div>
     );

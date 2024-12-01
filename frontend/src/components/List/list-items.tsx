@@ -1,4 +1,4 @@
-import { ListColumnConfig } from './types.ts';
+import {ListColumnConfig} from "../../types/types.ts";
 
 interface GenericListItemProps<T> {
     item: T;
@@ -18,13 +18,9 @@ export function GenericListItem<T>({
                                        rowClassName = '',
                                        isSelected,
                                    }: GenericListItemProps<T>) {
-
-    //console.log('selected item is: ' + isSelected);
-    //console.log('item is: ', item);
-
     return (
         <div
-            className={`grid py-2 px-4 border-b border-[#F0E0D6] hover:bg-[#fff7f1] transition-colors justify-center
+            className={`grid py-2 px-4 border-b border-[#F0E0D6] hover:bg-[#fff7f1] transition-colors items-center
             ${onRowClick ? 'cursor-pointer' : ''}
             ${typeof rowClassName === 'function' ? rowClassName(item, columnCount) : rowClassName}
             ${isSelected ? 'bg-[#F5672D] text-white' : ''}`}
@@ -40,8 +36,8 @@ export function GenericListItem<T>({
             {columns.map((column) => (
                 <div key={String(column.key)} className="text-[#211f1d]">
                     {column.render
-                        ? column.render(item[column.key] as T[keyof T], item)
-                        : String(item[column.key] ?? '')
+                        ? column.render(item[column.key as keyof T], item)
+                        : String(item[column.key as keyof T] ?? '')
                     }
                 </div>
             ))}

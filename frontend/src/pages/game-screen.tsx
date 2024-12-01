@@ -98,7 +98,7 @@ export default function GameScreen() {
                 console.error("Error al navegar:", error);
             }
         } else if (section === GameScreenSection.ModifyGame) {
-            //navigate("/modify-game"); // Navegar a la página de modificación
+            navigate("/game/modify-game", { state: { game: selectedGame } }); // Navegar a la página de modificación
         } else if (section === GameScreenSection.DeleteGame) {
             if (selectedGame) {
                 // Mostrar alerta de confirmación antes de eliminar
@@ -134,6 +134,7 @@ export default function GameScreen() {
         {
             key: "CodJuego",
             header: "ID",
+            width: "0.3fr",
             render: (value: string | number): JSX.Element => (
                 <span className="font-bold text-[#F5672D]">#{value}</span>
             )

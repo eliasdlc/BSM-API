@@ -1,5 +1,5 @@
-import {useNavigate} from "react-router-dom";
-import {ChangeEvent, FormEvent, useEffect, useState} from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 interface Player {
@@ -28,22 +28,27 @@ interface Game {
     Fecha: string;
 }
 
-export default function CreateStatistic(){
+export default function ModifyStatistic() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const selectedStatistic = location.state?.stat;
+    console.log("selectedStatistic", selectedStatistic);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [, setError] = useState<string | null>(null);
+    const [players, setPlayer] = useState<Player[]>([]);
+    const [, setFilteredPlayers] = useState<Player[]>([]); // Para los jugadores filtrados por equipo
+    const [games, setGame] = useState<Game[]>([]);
+    const [stats, setStat] = useState<Statictic[]>([]);
+    const [isPlayerDisabled, setIsPlayerDisabled] = useState<boolean>(true); // Estado de habilitación del jugador
+
     const [formData, setFormData] = useState({
         CodJugador: "",
         CodJuego: "",
         CodEstadistica: "",
         Cantidad: "",
-    })
+    });
 
-    const [players, setPlayer] = useState<Player[]>([]);
-    const [, setFilteredPlayers] = useState<Player[]>([]); // Para los jugadores filtrados por equipo
-    const [games, setGame] = useState<Game[]>([]);
-    const [, setLoading] = useState<boolean>(false);
-    const [, setError] = useState<string | null>(null);
-    const [stats, setStat] = useState<Statictic[]>([]);
-    const [isPlayerDisabled, setIsPlayerDisabled] = useState<boolean>(true); // Estado de habilitación del jugador
-    const navigate = useNavigate();
+
 
     useEffect(() => {
         // Obtener las ciudades
@@ -90,15 +95,6 @@ export default function CreateStatistic(){
         fetchStats()
     }, []);
 
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const target = e.target as HTMLInputElement | HTMLSelectElement;
-        const { name, value } = target;
-
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: value,
-        }));
-    };
 
     const handleGameSelect = (e: ChangeEvent<HTMLSelectElement>) => {
         const selectedGame = e.target.value;
@@ -107,7 +103,6 @@ export default function CreateStatistic(){
             CodJuego: selectedGame,
         }));
 
-        // Filtrar jugadores por el juego seleccionado
         const selectedGameObj = games.find(game => game.CodJuego === selectedGame);
         if (selectedGameObj === undefined) {
             setFilteredPlayers([]);
@@ -121,40 +116,63 @@ export default function CreateStatistic(){
         }
     };
 
+    useEffect(() => {
+        if (selectedStatistic) {
+            setFormData({
+                CodJugador: selectedStatistic.CodJugador,
+                CodJuego: selectedStatistic.CodJuego,
+                CodEstadistica: selectedStatistic.CodEstadistica,
+                Cantidad: selectedStatistic.Cantidad,
+            });
+        }
+    }, [selectedStatistic]);
+
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
+    };
+
     const handleSubmit = async (e: FormEvent) => {
-        console.log("Input Value: ", formData);
-        e.preventDefault(); // Evitar el comportamiento por defecto del formulario
-        setLoading(true);
+        e.preventDefault();
 
-        // DONE: Verificar que el jugador elegido este en el equipo elegido y viceversa
-        // Lo mejor seria que primero elija el equipo y luego habilitar para que elija los jugadores de ese equipo
-
-        if (!formData.CodJugador || !formData.CodJuego || !formData.CodEstadistica || !formData.Cantidad) {
-            setError("Please fill all the fields.");
-            alert("Please fill all the fields.");
-            setLoading(false);
-        } else {
-            try {
-                await axios.post("http://localhost:3000/EstadisticaJuego", formData);
-                alert("Game Statistic created successfully!");
-                navigate("/statistics");
-            } catch (error) {
-                console.error("Error creating Game Statistic:", error);
-                setError("Failed to create Game Statistic.");
-            } finally {
-                setLoading(false);
-            }
+        if (Object.values(formData).some((field) => !field)) {
+            alert("Please fill all the required fields.");
+            return;
         }
 
+        if (!window.confirm("Are you sure you want to save these changes?")) {
+            return;
+        }
 
-    }
+        setLoading(true);
+        setError(null); // Limpiar el error antes de intentar la solicitud
+
+        try {
+            console.log("formData", formData);
+            console.log("formData.CodEstadistica", formData.CodEstadistica);
+            console.log("formData.CodJugador", formData.CodJugador);
+            console.log("formData.CodJuego", formData.CodJuego);
+            await axios.put(`http://localhost:3000/EstadisticaJuego/${formData.CodEstadistica}/${formData.CodJugador}/${formData.CodJuego}`, formData);
+            alert("Statistic updated successfully!");
+            navigate("/statistics");
+        } catch (error) {
+            console.error("Error updating statistic:", error);
+            setError("Failed to update statistic.");
+            alert("Statistic couldn't be saved due to an error: " + (error));
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const goBackHandler = () => {
         navigate("/statistics");
-    }
+    };
 
     return (
-        <div className={"h-full w-full gap-4 flex flex-col"}>
+        <div className="h-screen w-full gap-4 flex flex-col p-5">
             <div id={"formulario"} className={"flex flex-col bg-[#312d2a] flex-grow gap-5 rounded-[32px] p-5"}>
                 <h1 className={"w-full text-xl text-[#F0E0D6] font-bold"}>Game Creation Process</h1>
 
@@ -230,23 +248,23 @@ export default function CreateStatistic(){
 
             </div>
 
-            <div id={"button-holder"}
-                 className={"flex flex-row gap-5 bg-[#312d2a] h-[10%] w-full rounded-[32px] p-5 items-center justify-center"}>
-                <div id={"go-back"} className={"flex-1"}>
+            <div id="button-holder"
+                 className="flex flex-row gap-5 bg-[#312d2a] h-[10%] w-full rounded-[32px] p-5 items-center justify-center">
+                <div id="go-back" className="flex-1">
                     <button onClick={goBackHandler}
-                            className={"text-[#F0E0D6] text-1xl font-bold text-opacity-25 w-[100px] h-[50px] hover:text-opacity-100"}>
+                            className="text-[#F0E0D6] text-1xl font-bold text-opacity-25 w-[100px] h-[50px] hover:text-opacity-100">
                         Go Back
                     </button>
                 </div>
 
-                <div id={"buttons"} className={"flex-2 items-end justify-center h-full"}>
+                <div id="buttons" className="flex-2 items-end justify-center h-full">
                     <button onClick={handleSubmit}
-                            className={"bg-[#F0E0D6] text-[#201f1d] text-1xl font-bold rounded-2xl w-full min-w-64 h-full normal-shadow"}>
-                        Save Game Statistic
+                            className="bg-[#F0E0D6] text-[#201f1d] text-1xl font-bold rounded-2xl w-full min-w-64 h-full normal-shadow"
+                            disabled={loading}>
+                        {loading ? "Saving..." : "Save Changes"}
                     </button>
                 </div>
             </div>
         </div>
-
-    )
+    );
 }

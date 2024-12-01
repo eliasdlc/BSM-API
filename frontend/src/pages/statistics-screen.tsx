@@ -104,7 +104,8 @@ export default function StatisticsScreen() {
                 console.error("Error al navegar:", error);
             }
         } else if (section === StatsScreenSection.ModifyStats) {
-            //navigate("/modify-game"); // Navegar a la página de modificación
+            console.log("Selected stat:", selectedStat);
+            navigate("/statistics/modify-statistics", { state: { stat: selectedStat } }); // Navegar a la página de modificación
         } else if (section === StatsScreenSection.DeleteStats) {
             if (selectedStat){
                 const confirmDelete = window.confirm("Are you sure you want to delete this player?");

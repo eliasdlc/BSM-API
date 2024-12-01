@@ -109,7 +109,7 @@ export default function PlayerScreen() {
                 console.error("Error al navegar:", error);
             }
         } else if (section === PlayerScreenSection.ModifyPlayer) {
-            //navigate("/modify-game"); // Navegar a la página de modificación
+            navigate("/player/modify-player", { state: { player: selectedPlayer } }); // Navegar a la página de modificación
         } else if (section === PlayerScreenSection.DeletePlayer) {
             if (selectedPlayer){
                 const confirmDelete = window.confirm("Are you sure you want to delete this player?");
@@ -139,6 +139,7 @@ export default function PlayerScreen() {
         {
             key: "CodJugador",
             header: "ID",
+            width: "0.5fr",
             render: (value: string | number): JSX.Element => (
                 <span className="font-bold text-[#F5672D]">#{value}</span>
             ),

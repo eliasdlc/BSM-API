@@ -85,17 +85,24 @@ export default function CreateTeam() {
         e.preventDefault(); // Evitar el comportamiento por defecto del formulario
         setLoading(true);
 
-        try {
-            // Hacer la solicitud para guardar el equipo
-            await axios.post("http://localhost:3000/Equipo", formData);
-            alert("Team created successfully!");
-            navigate("/team"); // Redirigir a la lista de equipos
-        } catch (error) {
-            console.error("Error creating team:", error);
-            setError("Failed to create team.");
-        } finally {
+        if (!formData.CodCiudad || !formData.Nombre || !formData.CodEquipo) {
+            setError("Please fill all the fields.");
+            alert("Please fill all the fields.");
             setLoading(false);
+        } else {
+            try {
+                // Hacer la solicitud para guardar el equipo
+                await axios.post("http://localhost:3000/Equipo", formData);
+                alert("Team created successfully!");
+                navigate("/team"); // Redirigir a la lista de equipos
+            } catch (error) {
+                console.error("Error creating team:", error);
+                setError("Failed to create team.");
+            } finally {
+                setLoading(false);
+            }
         }
+
     };
 
     const goBackHandler = () => {
